@@ -1,0 +1,10 @@
+# jemdoc: menu{MENU}{schdeule.html}, nofooter
+== 进度表
+
+=== 组会记录
+
+- 2月14日：建站记录进度，将SketchLearn、flow radar、ElasticSketch的算法实现，并使用CAIDA数据集测试，同时测量IO数据大小。
+
+=== 进度记录
+
+- 2月16日：建立本站。
