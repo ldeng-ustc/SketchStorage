@@ -1,3 +1,10 @@
+/*
+ *  Abbreviations and acronyms：
+ *      pkt     packet
+ *      ts      time
+ *      hdr     header
+ */
+
 #include <iostream>
 #include <vector>
 #include <map>
@@ -20,13 +27,8 @@
 
 using namespace std;
 
-
-
 map<flowkey_t, flowinfo_t> flowmap;
-vector<packetinfo_t> packet_list;
 vector<flowinfo_t> flow_list;
-
-trace_info_t trace_info;
 
 const char DATA_PATH[] = "/data/caida/equinix-nyc.dirA.20190117-130000.UTC.anon.pcap";
 char errmsg[PCAP_ERRBUF_SIZE];
@@ -51,7 +53,8 @@ vector<int> count_active_flows(const map<flowkey_t, flowinfo_t> & flowmap, doubl
     return cnt_list;
 }
 
-vector<int> count_unique_flows(const vector<packetinfo_t> & pktlist, double interval) {
+vector<int> count_unique_flows(trace_t trace, double interval) {
+    const vector<packet_info_t> & pktlist = trace.packet_list;
     vector<int> cnt_list;
     uint64_t ts = (uint64_t)(pktlist[0].ts / interval);
     int cnt = 0;
@@ -74,75 +77,17 @@ vector<int> count_unique_flows(const vector<packetinfo_t> & pktlist, double inte
 
 int main(int argc, char** argv) {
     pcap_t *p = pcap_open_offline(DATA_PATH, errmsg);
-    const uint8_t *pkt;
-    pcap_pkthdr hdr;
-    while((pkt = pcap_next(p, &hdr)) != NULL) {
-        double pkt_ts = (double)hdr.ts.tv_usec / 1000000 + hdr.ts.tv_sec;
-        uint32_t pkt_len = hdr.caplen;
-        flowkey_t key;
-
-        ip* ip_hdr;
-        tcphdr* tcp_hdr;
-        udphdr* udp_hdr;
-        
-        ip_hdr = (ip*)(pkt);
-        if ((int)pkt_len < (ip_hdr->ip_hl << 2)) {
-            continue;
-        }
-        if (ip_hdr->ip_v != 4) {
-            continue;
-        }
-        
-        if (ip_hdr->ip_p == IPPROTO_TCP) {
-            // see if the TCP header is fully captured
-            tcp_hdr = (struct tcphdr*)((uint8_t*)ip_hdr + (ip_hdr->ip_hl << 2));
-            if ((int)pkt_len < (ip_hdr->ip_hl << 2) + (tcp_hdr->doff << 2)) {
-                continue;
-            }
-        } else if (ip_hdr->ip_p == IPPROTO_UDP) {
-            // see if the UDP header is fully captured
-            if ((int)pkt_len < (ip_hdr->ip_hl << 2) + 8) {
-                continue;
-            }
-        } else if (ip_hdr->ip_p == IPPROTO_ICMP) {
-            // see if the ICMP header is fully captured
-            if ((int)pkt_len < (ip_hdr->ip_hl << 2) + 8) {
-                continue;
-            }
-        }
-
-        key.src_ip = ip_hdr->ip_src.s_addr;
-        key.dst_ip = ip_hdr->ip_dst.s_addr;
-        key.proto = ip_hdr->ip_p;
-        if (ip_hdr->ip_p == IPPROTO_TCP) {
-            // TCP
-            tcp_hdr = (struct tcphdr*)((uint8_t*)ip_hdr + (ip_hdr->ip_hl << 2));
-            key.src_port = ntohs(tcp_hdr->source);
-            key.dst_port = ntohs(tcp_hdr->dest);
-        }
-        else if (ip_hdr->ip_p == IPPROTO_UDP) {
-            // UDP
-            udp_hdr = (struct udphdr*)((uint8_t*)ip_hdr + (ip_hdr->ip_hl << 2));
-            key.src_port = ntohs(udp_hdr->source);
-            key.dst_port = ntohs(udp_hdr->dest);
-        } else {
-            // Other L4
-            key.src_port = 0;
-            key.dst_port = 0;
-        }
+    trace_t trace(p);
+    for(auto pkt: trace.packet_list) {
+        const flowkey_5_tuple_t & key = pkt.key;
+        const double & pkt_ts = pkt.ts; 
 
         if(flowmap[key].pkt_cnt == 0) {
             flowmap[key].start_time = pkt_ts;
         }
         flowmap[key].end_time = pkt_ts;
         flowmap[key].pkt_cnt ++;
-        flowmap[key].flow_size += ntohs(ip_hdr->ip_len);
-        if(trace_info.pkt_cnt == 0) {
-            trace_info.start_time = pkt_ts;
-        }
-        trace_info.pkt_cnt ++;
-        trace_info.end_time = pkt_ts;
-        packet_list.push_back({key, ntohs(ip_hdr->ip_len), pkt_ts});
+        flowmap[key].flow_size += pkt.size;
     }
 
     double maxtime = 0;
@@ -158,9 +103,9 @@ int main(int argc, char** argv) {
 
     printf(
         "total_packets: %u\nstart_time: %lf\nend_time: %lf\n",
-        trace_info.pkt_cnt,
-        trace_info.start_time, 
-        trace_info.end_time
+        trace.pkt_cnt,
+        trace.start_time, 
+        trace.end_time
     );
     printf("total_flow: %lu\n", flowmap.size());
     printf(
@@ -175,7 +120,7 @@ int main(int argc, char** argv) {
     }
 
     FILE *file;
-    /*
+    
     vector<double> interval_list {0.001, 0.01, 0.1, 1, 10};
     for(double interval: interval_list) {
         vector<int> && cnt_list = count_active_flows(flowmap, interval);
@@ -198,7 +143,7 @@ int main(int argc, char** argv) {
     }
 
     for(double interval: interval_list) {
-        vector<int> && cnt_list = count_unique_flows(packet_list, interval);
+        vector<int> && cnt_list = count_unique_flows(trace, interval);
         int maxcnt = 0;
         int mincnt = INT_MAX;
         double avgcnt = 0;
@@ -222,7 +167,7 @@ int main(int argc, char** argv) {
     int single_pkt_flow_cnt = 0;
     fprintf(file, "flow_id,start,end,duration,packet_cnt,size\n");
     for(auto flow: flow_list) {
-        if(flow.second.pkt_cnt == 1){
+        if(flow.pkt_cnt == 1){
             single_pkt_flow_cnt ++;
         }
         else{
@@ -230,18 +175,18 @@ int main(int argc, char** argv) {
                 file,
                 "%d,%lf,%lf,%lf,%u,%u\n",
                 ++i,
-                flow.second.start_time,
-                flow.second.end_time,
-                flow.second.end_time - flow.second.start_time,
-                flow.second.pkt_cnt,
-                flow.second.flow_size 
+                flow.start_time,
+                flow.end_time,
+                flow.end_time - flow.start_time,
+                flow.pkt_cnt,
+                flow.flow_size 
             );
         }
-        flow_list.push_back(flow.second);
+        flow_list.push_back(flow);
     }
     fclose(file);
     printf("single packet flows: %d\n", single_pkt_flow_cnt);
-    */
+    
 
     file = fopen("flows_duration_distribution.csv", "w");
     sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_duration);
