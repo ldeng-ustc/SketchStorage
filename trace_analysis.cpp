@@ -10,11 +10,11 @@
 #include <map>
 #include <set>
 #include <algorithm>
-
 #include <cstdio>
 #include <cstring>
 #include <climits>
 
+#include <sys/stat.h>
 #include <arpa/inet.h>
 #include <netinet/if_ether.h>
 #include <netinet/ip.h>
@@ -30,7 +30,7 @@ using namespace std;
 map<flowkey_t, flowinfo_t> flowmap;
 vector<flowinfo_t> flow_list;
 
-const char DATA_PATH[] = "/data/caida/equinix-nyc.dirA.20190117-130000.UTC.anon.pcap";
+const char DATA_PATH[] = "/data/caida/trace.bin";
 char errmsg[PCAP_ERRBUF_SIZE];
 
 vector<int> count_active_flows(const map<flowkey_t, flowinfo_t> & flowmap, double interval) {
@@ -76,8 +76,10 @@ vector<int> count_unique_flows(trace_t trace, double interval) {
 }
 
 int main(int argc, char** argv) {
-    pcap_t *p = pcap_open_offline(DATA_PATH, errmsg);
-    trace_t trace(p);
+    trace_t trace;
+    int st = clock();
+    trace.load(DATA_PATH);
+    printf("%lf\n", (clock() - st) / (double)(CLOCKS_PER_SEC));
     for(auto pkt: trace.packet_list) {
         const flowkey_5_tuple_t & key = pkt.key;
         const double & pkt_ts = pkt.ts; 
@@ -103,9 +105,9 @@ int main(int argc, char** argv) {
 
     printf(
         "total_packets: %u\nstart_time: %lf\nend_time: %lf\n",
-        trace.pkt_cnt,
-        trace.start_time, 
-        trace.end_time
+        trace.pkt_cnt(),
+        trace.start_time(), 
+        trace.end_time()
     );
     printf("total_flow: %lu\n", flowmap.size());
     printf(
@@ -119,7 +121,9 @@ int main(int argc, char** argv) {
         flow_list.push_back(flow.second);
     }
 
-    FILE *file;
+    FILE *file = nullptr;
+    mkdir("./data", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
+    mkdir("./data/analysis", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH);
     
     vector<double> interval_list {0.001, 0.01, 0.1, 1, 10};
     for(double interval: interval_list) {
@@ -162,7 +166,8 @@ int main(int argc, char** argv) {
         );
     }
 
-    file = fopen("flows.csv", "w");
+    
+    file = fopen("./data/analysis/flows.csv", "w");
     int i = 0;
     int single_pkt_flow_cnt = 0;
     fprintf(file, "flow_id,start,end,duration,packet_cnt,size\n");
@@ -182,13 +187,12 @@ int main(int argc, char** argv) {
                 flow.flow_size 
             );
         }
-        flow_list.push_back(flow);
     }
     fclose(file);
     printf("single packet flows: %d\n", single_pkt_flow_cnt);
     
 
-    file = fopen("flows_duration_distribution.csv", "w");
+    file = fopen("./data/analysis/flows_duration_distribution.csv", "w");
     sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_duration);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
@@ -197,7 +201,7 @@ int main(int argc, char** argv) {
     }
     fclose(file);
 
-    file = fopen("flows_size_distribution.csv", "w");
+    file = fopen("./data/analysis/flows_size_distribution.csv", "w");
     sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_size);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
@@ -206,7 +210,7 @@ int main(int argc, char** argv) {
     }
     fclose(file);
 
-    file = fopen("flows_pktcnt_distribution.csv", "w");
+    file = fopen("./data/analysis/flows_pktcnt_distribution.csv", "w");
     sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_pkt_cnt);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
