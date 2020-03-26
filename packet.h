@@ -21,7 +21,7 @@ struct packet_info_t {
 int decode_packet(const pcap_pkthdr & pcap_hdr, const uint8_t *packet, packet_info_t & pkt_info) {
     double pkt_ts = (double)pcap_hdr.ts.tv_usec / 1000000 + pcap_hdr.ts.tv_sec;
     uint32_t pkt_len = pcap_hdr.caplen;
-    flowkey_t key;
+    flowkey_5_tuple_t key;
 
     ip* ip_hdr;
     tcphdr* tcp_hdr;

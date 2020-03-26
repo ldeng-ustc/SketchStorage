@@ -27,13 +27,13 @@
 
 using namespace std;
 
-map<flowkey_t, flowinfo_t> flowmap;
-vector<flowinfo_t> flow_list;
+map<flowkey_t, flow_info_t> flowmap;
+vector<flow_info_t> flow_list;
 
 const char DATA_PATH[] = "/data/caida/trace.bin";
 char errmsg[PCAP_ERRBUF_SIZE];
 
-vector<int> count_active_flows(const map<flowkey_t, flowinfo_t> & flowmap, double interval) {
+vector<int> count_active_flows(const map<flowkey_t, flow_info_t> & flowmap, double interval) {
     map<uint64_t, int> delta;
     for(auto flow: flowmap) {
         uint64_t l = (uint64_t)(flow.second.start_time / interval);
@@ -193,7 +193,7 @@ int main(int argc, char** argv) {
     
 
     file = fopen("./data/analysis/flows_duration_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_duration);
+    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_duration);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double duration = flow_list[index].end_time - flow_list[index].start_time;
@@ -202,7 +202,7 @@ int main(int argc, char** argv) {
     fclose(file);
 
     file = fopen("./data/analysis/flows_size_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_size);
+    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_size);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double size = flow_list[index].flow_size;
@@ -211,7 +211,7 @@ int main(int argc, char** argv) {
     fclose(file);
 
     file = fopen("./data/analysis/flows_pktcnt_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flowinfo_t::lt_pkt_cnt);
+    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_pkt_cnt);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double pktcnt = flow_list[index].pkt_cnt;
