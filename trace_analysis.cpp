@@ -27,6 +27,8 @@
 
 using namespace std;
 
+typedef flowkey_5_tuple_t flowkey_t;
+
 map<flowkey_t, flow_info_t> flowmap;
 vector<flow_info_t> flow_list;
 
