@@ -1,6 +1,7 @@
 #ifndef __FLOW_H_
 #define __FLOW_H_
 
+#include <random>
 #include <cstdint>
 #include <cstring>
 
@@ -24,6 +25,18 @@ struct __attribute__ ((__packed__)) flowkey_5_tuple_t {
         this->src_port ^= b.src_port;
         this->dst_port ^= b.dst_port;
         this->proto ^= b.proto;
+    }
+
+    template<typename T>
+    static flowkey_5_tuple_t random(T & gen) {
+        std::uniform_int_distribution<uint32_t> r;
+        flowkey_5_tuple_t key;
+        key.src_ip = r(gen);
+        key.dst_ip = r(gen);
+        key.src_port = static_cast<uint16_t>(r(gen));
+        key.dst_port = static_cast<uint16_t>(r(gen));
+        key.proto = static_cast<uint8_t>(r(gen));
+        return key;
     }
 };
 

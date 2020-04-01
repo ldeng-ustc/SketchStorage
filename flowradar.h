@@ -5,6 +5,7 @@
 #include <array>
 #include <vector>
 #include <queue>
+#include <utility>
 
 #include "packet.h"
 #include "flow.h"
@@ -55,7 +56,7 @@ flow_radar_counting_table_t::flow_radar_counting_table_t(
 ) {
     this->table_size = table_size;
     this->table_num_hashes = table_num_hashes;
-    this->counting_table = new flow_radar_element_t[table_size];
+    this->counting_table = new flow_radar_element_t[table_size] ();
     this->seed = table_seed;
 }
 
@@ -107,6 +108,7 @@ public:
     ~flow_radar_t();
     void clear();
     void update(packet_info_t pkt);
+    const flow_radar_counting_table_t get_counting_table();
 };
 
 flow_radar_t::flow_radar_t(
@@ -135,6 +137,10 @@ void flow_radar_t::update(packet_info_t pkt) {
     else{
         this->counting_table.update(pkt);
     }
+}
+
+const flow_radar_counting_table_t flow_radar_t::get_counting_table() {
+    return this->counting_table;
 }
 
 class flow_radar_controller_t
@@ -181,7 +187,7 @@ int flow_radar_controller_t::decode(
         }
 
         flow_info_t flow_info{0, 0, pkt_cnt, 0};
-        out.push_back(make_pair(element.flow_xor, flow_info));
+        out.push_back(std::make_pair(element.flow_xor, flow_info));
         element.flow_count -- ;
         element.flow_xor ^= flow_key;
         element.packet_count = 0;

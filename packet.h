@@ -1,6 +1,7 @@
 #ifndef __PACKET_H_
 #define __PACKET_H_
 
+#include <random>
 #include <cstdint>
 
 #include <arpa/inet.h>
@@ -16,6 +17,8 @@ struct packet_info_t {
     flowkey_5_tuple_t key;
     uint32_t size;
     double ts;
+    template<typename T>
+    static packet_info_t random(T & gen);
 };
 
 int decode_packet(const pcap_pkthdr & pcap_hdr, const uint8_t *packet, packet_info_t & pkt_info) {
@@ -76,6 +79,17 @@ int decode_packet(const pcap_pkthdr & pcap_hdr, const uint8_t *packet, packet_in
     pkt_info = {key, ntohs(ip_hdr->ip_len), pkt_ts};
 
     return 0;
+}
+
+template<typename T>
+packet_info_t packet_info_t::random(T & gen) {
+    packet_info_t pkt;
+    std::uniform_int_distribution<uint32_t> r32;
+    std::uniform_real_distribution<double> rdouble;
+    pkt.key = flowkey_5_tuple_t::random(gen);
+    pkt.size = static_cast<uint16_t>(r32(gen));
+    pkt.ts = rdouble(gen);
+    return pkt;
 }
 
 #endif
