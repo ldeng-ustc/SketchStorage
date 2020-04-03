@@ -92,7 +92,7 @@ int main(int argc, char **argv) {
                 flow_radar.update(packet_info_t::random(gen));
                 cnt ++;
             }while(!flow_radar_controller_t::decode(flow_radar.get_counting_table(), out));
-            fprintf(file, "%d,", cnt-1);
+            fprintf(file, i==0 ? "%d" : ",%d", cnt-1);
         }
         fprintf(file, "\n");
     }

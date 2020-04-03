@@ -1,4 +1,6 @@
+tmp/
 data/
+img/
 trace_analysis
 trace_preprocessing
 evaluations/flowradar_decoding_eval
