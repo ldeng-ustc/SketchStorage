@@ -1,7 +1,7 @@
 tmp/
 data/
 img/
-trace_analysis
-trace_preprocessing
+obj/
+bin/
 evaluations/flowradar_decoding_eval
 .vscode/

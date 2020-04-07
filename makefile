@@ -1,17 +1,34 @@
+DIR_OBJ = obj
+DIR_BIN = bin
+DIR_EVAL = eval
+
+EXECS_NAME = trace_preprocessing trace_analysis
+EXECS = $(patsubst %, ${DIR_BIN}/%, ${EXECS_NAME})
+
+EVALS_NAME = flowradar_decoding_eval flowradar_caida_eval
+EVALS = $(patsubst %, ${DIR_BIN}/${DIR_EVAL}/%, ${EVALS_NAME})
+
+OBJS_NAME = MurmurHash3.o
+OBJS = $(patsubst %, ${DIR_OBJ}/%, ${OBJS_NAME})
+
+CC = g++
+LIBS = -lpcap
+CPPFLAGS = -g
 
 .phony: all clean
+all: ${EXECS} ${EVALS}
 
-all: trace_preprocessing trace_analysis ./evaluations/flowradar_decoding_eval
+${DIR_BIN}/${DIR_EVAL}/%: ${DIR_EVAL}/%.cpp
+	@mkdir -p ${DIR_BIN}/${DIR_EVAL}
+	$(CC) $^ ${OBJS} -o $@ ${LIBS}
 
-trace_analysis: trace_analysis.cpp packet.h flow.h trace.h
-	g++ $< -o $@ -lpcap
+${DIR_BIN}/%: ${DIR_OBJ}/%.o
+	@mkdir -p ${DIR_BIN}
+	$(CC) $^ ${OBJS} -o $@ ${LIBS}
 
-trace_preprocessing: trace_preprocessing.cpp packet.h flow.h trace.h
-	g++ $< -o $@ -lpcap
-
-./evaluations/flowradar_decoding_eval: ./evaluations/flowradar_decoding_eval.cpp MurmurHash3.cpp packet.h flow.h trace.h flowradar.h
-	g++  MurmurHash3.cpp $< -o $@ -lpcap
-
+${DIR_OBJ}/%.o: %.cpp ${OBJS}
+	@mkdir -p ${DIR_OBJ}
+	$(CC) $(CPPFLAGS) -c  $< -o $@
 
 clean:
-	rm trace_preprocessing trace_analysis ./evaluations/flowradar_decoding_eval
+	rm -r bin obj
