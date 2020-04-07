@@ -59,7 +59,11 @@ public:
         void * data = this->packet_list.data();
         size_t n = this->packet_list.size();
         size_t cnt = fwrite(data, sizeof(packet_info_t), n, file);
-        fclose(file);
+        if(cnt != n){
+            printf("failed to write file.\n");
+            fclose(file);
+            return -cnt;
+        }
         return 0;
     }
 
@@ -75,6 +79,27 @@ public:
         packet_info_t pkt;
         while(fread(&pkt, sizeof(packet_info_t), 1, file) != 0) {
             this->packet_list.push_back(pkt);
+        }
+        fclose(file);
+        return 0;
+    }
+
+    int load_by_time(const char *filename, double duration, bool append=false) {
+        FILE * file = fopen(filename, "rb");
+        if(!append){
+            this->packet_list.clear();
+        }
+        if(file == nullptr) {
+            printf("failed to open: %s\n", filename);
+            return -1;
+        }
+        packet_info_t pkt;
+        while(fread(&pkt, sizeof(packet_info_t), 1, file) != 0) {
+            this->packet_list.push_back(pkt);
+            if(pkt.ts - this->packet_list[0].ts > duration) {
+                this->packet_list.pop_back();
+                break;
+            }
         }
         fclose(file);
         return 0;

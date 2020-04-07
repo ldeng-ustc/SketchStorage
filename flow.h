@@ -25,6 +25,7 @@ struct __attribute__ ((__packed__)) flowkey_5_tuple_t {
         this->src_port ^= b.src_port;
         this->dst_port ^= b.dst_port;
         this->proto ^= b.proto;
+        return *this;
     }
 
     template<typename T>

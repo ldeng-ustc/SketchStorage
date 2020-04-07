@@ -75,7 +75,7 @@ void flow_radar_counting_table_t::clear() {
 
 void flow_radar_counting_table_t::insert(packet_info_t pkt) {
     std::array<uint64_t, 2> hash_values = hash(&(pkt.key), sizeof(pkt.key));
-    for(int i=0; i < this->table_num_hashes; i++) {
+    for(unsigned i=0; i < this->table_num_hashes; i++) {
         uint64_t h = nth_hash(i, hash_values[0], hash_values[1], this->table_size);
         counting_table[h].flow_xor ^= pkt.key;
         counting_table[h].flow_count ++;
@@ -85,7 +85,7 @@ void flow_radar_counting_table_t::insert(packet_info_t pkt) {
 
 void flow_radar_counting_table_t::update(packet_info_t pkt) {
     std::array<uint64_t, 2> hash_values = hash(&(pkt.key), sizeof(pkt.key));
-    for(int i=0; i < this->table_num_hashes; i++) {
+    for(unsigned i=0; i < this->table_num_hashes; i++) {
         uint64_t h = nth_hash(i, hash_values[0], hash_values[1], this->table_size);
         counting_table[h].packet_count ++;
     }
@@ -132,6 +132,7 @@ void flow_radar_t::clear() {
 
 void flow_radar_t::update(packet_info_t pkt) {
     if(! this->flow_filter.contains(&(pkt.key), sizeof(pkt.key))) {
+        this->flow_filter.add(&pkt.key, sizeof(pkt.key));
         this->counting_table.insert(pkt);
     }
     else{
@@ -169,7 +170,7 @@ int flow_radar_controller_t::decode(
 ) {
     std::vector<std::pair<flowkey_5_tuple_t, flow_info_t>> flows_list;
     std::queue<uint32_t> q;
-    for(int i=0; i<table.table_size; i++) {
+    for(unsigned i=0; i<table.table_size; i++) {
         if(table.counting_table[i].flow_count == 1) {
             q.push(i);
         }
@@ -193,7 +194,7 @@ int flow_radar_controller_t::decode(
         element.packet_count = 0;
 
         auto hash_values = table.hash(&flow_key, sizeof(flow_key));
-        for(int i=0; i<table.table_num_hashes; i++) {
+        for(unsigned i=0; i<table.table_num_hashes; i++) {
             uint64_t h = table.nth_hash(i, hash_values[0], hash_values[1], table.table_size);
             if(h != index) {
                 table.counting_table[h].flow_xor ^= flow_key;
@@ -207,7 +208,7 @@ int flow_radar_controller_t::decode(
     }
 
     uint32_t failed_cnt = 0;
-    for(int i=0; i<table.table_size; i++) {
+    for(unsigned i=0; i<table.table_size; i++) {
         failed_cnt += table.counting_table[i].flow_count;
     }
     return failed_cnt;

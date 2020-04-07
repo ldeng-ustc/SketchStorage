@@ -40,7 +40,7 @@ int filter_num_hashes = 3;
 int repeat = 1000;
 char * output_path = DEFAULT_PATH;
 
-int parse_args (int argc, char **argv)
+void parse_args (int argc, char **argv)
 {
     int c;
     while((c=getopt(argc, argv, "k:l:r:s:h:n:o:")) != -1) {

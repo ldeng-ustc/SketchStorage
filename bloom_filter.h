@@ -16,7 +16,7 @@ private:
     uint32_t seed;
 
     inline void set(uint32_t i) {
-        bits[i>>3] &= 1<< (i & 0xF);
+        bits[i>>3] |= 1<< (i & 0xF);
     }
 
     inline bool test(uint32_t i) {
@@ -55,15 +55,16 @@ bloom_filter_t::~bloom_filter_t() {
 
 void bloom_filter_t::add(const void *data, std::size_t len) {
     auto hash_values = hash(data, len);
-    for(int i=0; i<num_hashes; i++) {
+    for(unsigned i=0; i<num_hashes; i++) {
         this->set(nth_hash(i, hash_values[0], hash_values[1], this->size));
     }
 }
 
 bool bloom_filter_t::contains(const void *data, std::size_t len) {
     auto hash_values = hash(data, len);
-    for(int i=0; i<num_hashes; i++) {
-        if(! this->test(nth_hash(i, hash_values[0], hash_values[1], this->size))) {
+    for(unsigned i=0; i<num_hashes; i++) {
+        uint64_t h = nth_hash(i, hash_values[0], hash_values[1], this->size);
+        if(! this->test(h)) {
             return false;
         }
     }

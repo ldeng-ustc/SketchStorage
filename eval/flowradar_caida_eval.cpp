@@ -8,7 +8,7 @@
  *  -s: time interval between decodings.
  *  -f: filter size of bloom filter in flowradar.
  *  -h: number of hash functions used in bloom filter in flowradar.
- *  -n: repeat times for every test.
+ *  -n: maximum number of intervals, if trace file has more packets, program will ignore the rest.
  *  -i: trace file path.
  *  -o: output file path.
  * 
@@ -33,18 +33,19 @@ char DEFAULT_PATH[] = "data.csv";
 char DEFAULT_TRACE_PATH[] = "./data/caida/trace.bin";
 
 double interval = 0.001;
-int table_num_hashes = 3;
-int table_size = 600;
+int max_intervals = 1000;
+int table_num_hashes = 4;
+int table_size = 2000;
 int filter_size = 1<<20;
 int filter_num_hashes = 3;
 int repeat = 1000;
 const char * output_path = DEFAULT_PATH;
 const char * trace_path = DEFAULT_TRACE_PATH;
 
-int parse_args (int argc, char **argv)
+void parse_args (int argc, char **argv)
 {
     int c;
-    while((c=getopt(argc, argv, "k:l:r:s:h:n:o:")) != -1) {
+    while((c=getopt(argc, argv, "k:m:s:f:h:n:o:i:")) != -1) {
         switch (c)
         {
         case 'k':
@@ -54,7 +55,8 @@ int parse_args (int argc, char **argv)
             sscanf(optarg, "%d", &table_size);
             break;
         case 's':
-
+            sscanf(optarg, "%lf", &interval);
+            break;
         case 'f':
             sscanf(optarg, "%d", &filter_size);
             break;
@@ -62,17 +64,17 @@ int parse_args (int argc, char **argv)
             sscanf(optarg, "%d", &filter_num_hashes);
             break;
         case 'n':
-            sscanf(optarg, "%d", &repeat);
+            sscanf(optarg, "%d", &max_intervals);
             break;
         case 'o':
             output_path = optarg;
             break;
         case 'i':
             trace_path = optarg;
+            break;
         default:
             break;
         }
-
     }
 }
 
@@ -82,20 +84,28 @@ int main(int argc, char **argv) {
     parse_args(argc, argv);
 
     trace_t trace;
-    trace.load(trace_path);
+    trace.load_by_time(trace_path, interval * max_intervals);
     FILE * file = fopen(output_path, "w");
-    for(int i=0; i< repeat; i++) {
-        int cnt = 0;
-        flow_radar_t flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
-        vector<pair<flowkey_5_tuple_t, flow_info_t>> out;
+    flow_radar_t flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
+    vector<pair<flowkey_5_tuple_t, flow_info_t>> out;
 
-        int current_interval = (int)trace.start_time();
-        for(auto pkt: trace.packet_list){
-            if((int)pkt.ts != current_interval) {
-                int failed = controller_t::decode(flow_radar.get_counting_table(), out);
-                fprintf(file, i==0 ? "%d" : ",%d", failed/table_num_hashes);
+    uint64_t current_interval = static_cast<uint64_t>(trace.start_time() / interval);
+    int j = 0;
+    for(auto pkt: trace.packet_list){
+        if(static_cast<uint64_t>(pkt.ts / interval) != current_interval) {
+            current_interval ++;
+            int failed = controller_t::decode(flow_radar.get_counting_table(), out);
+            fprintf(file, "%d,%lu\n", failed/table_num_hashes, out.size());
+            flow_radar.clear();
+            out.clear();
+            j++;
+            if(j >= max_intervals) {
+                break;
             }
         }
+        //flow_radar.update(pkt);
+        flow_radar.update(trace.packet_list[0]);
     }
+
     fprintf(file, "\n");
 }
