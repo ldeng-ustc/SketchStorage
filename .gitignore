@@ -3,5 +3,5 @@ data/
 img/
 obj/
 bin/
-evaluations/flowradar_decoding_eval
+data.csv
 .vscode/
