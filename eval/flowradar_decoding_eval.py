@@ -3,18 +3,18 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-exec_dir = "./evaluations"
+exec_dir = "./bin/"
 exec_file = "flowradar_decoding_eval"
 exec_path = os.path.join(exec_dir, exec_file)
 
 csv_dir = "./data/evaluations/"
 img_dir = "./img"
 
-K = 3
+K = 5
 L = 100
-R = 2000
+R = 3000
 S = 100
-N = 500
+N = 100
 
 def get_name(k=K, l=L, r=R, s=S, n=N):
     return f"{exec_file}_k={k}_l={l}_r={r}_s={s}_n={n}"
@@ -34,8 +34,8 @@ if __name__ == '__main__':
     os.makedirs(img_dir, exist_ok=True)
 
     markers = ['o', 's', '^', 'p', 'D', 'v', 'h']
-    for k in range(1, 4):
-        arr = load_or_run(k=k, n=500)
+    for k in range(1, K + 1):
+        arr = load_or_run(k=k)
         mean = arr.mean(axis=1)
         plt.plot(range(L, R+1, S), mean, label=f'k={k}', marker=markers[k - 1])
     plt.title('Decoding Eval of FlowRadar')

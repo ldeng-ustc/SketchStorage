@@ -19,6 +19,7 @@
 #include <iostream>
 #include <bitset>
 #include <random>
+#include <cassert>
 
 #include <getopt.h>
 
@@ -34,8 +35,8 @@ char DEFAULT_TRACE_PATH[] = "./data/caida/trace.bin";
 
 double interval = 0.001;
 int max_intervals = 1000;
-int table_num_hashes = 4;
-int table_size = 2000;
+int table_num_hashes = 3;
+int table_size = 1000;
 int filter_size = 1<<20;
 int filter_num_hashes = 3;
 int repeat = 1000;
@@ -95,7 +96,11 @@ int main(int argc, char **argv) {
         if(static_cast<uint64_t>(pkt.ts / interval) != current_interval) {
             current_interval ++;
             int failed = controller_t::decode(flow_radar.get_counting_table(), out);
-            fprintf(file, "%d,%lu\n", failed/table_num_hashes, out.size());
+            int decoded = out.size();
+            assert(failed % table_num_hashes == 0);
+            failed = failed / table_num_hashes;
+
+            fprintf(file, "%d,%u\n", failed, decoded + failed);
             flow_radar.clear();
             out.clear();
             j++;
@@ -103,8 +108,8 @@ int main(int argc, char **argv) {
                 break;
             }
         }
-        //flow_radar.update(pkt);
-        flow_radar.update(trace.packet_list[0]);
+        flow_radar.update(pkt);
+        //flow_radar.update(trace.packet_list[0]);
     }
 
     fprintf(file, "\n");
