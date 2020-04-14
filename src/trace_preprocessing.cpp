@@ -4,7 +4,7 @@
 
 #include <pcap/pcap.h>
 
-#include "trace.h"
+#include "./modules/trace.h"
 
 const int FILENAME_BUF_SIZE = 200;
 const char * DEFAULT_OUTPATH = "trace.bin";

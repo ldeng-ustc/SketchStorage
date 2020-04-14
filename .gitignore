@@ -1,7 +1,6 @@
 tmp/
 data/
 img/
-obj/
-bin/
+build/
 data.csv
 .vscode/

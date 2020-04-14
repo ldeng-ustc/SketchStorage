@@ -23,10 +23,10 @@
 
 #include <getopt.h>
 
-#include "../packet.h"
-#include "../flow.h"
-#include "../trace.h"
-#include "../flowradar.h"
+#include "../modules/packet.h"
+#include "../modules/flow.h"
+#include "../modules/trace.h"
+#include "../modules/flowradar.h"
 
 using namespace std;
 
@@ -88,7 +88,7 @@ int main(int argc, char **argv) {
     trace.load_by_time(trace_path, interval * max_intervals);
     FILE * file = fopen(output_path, "w");
     flow_radar_t flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
-    vector<pair<flowkey_5_tuple_t, flow_info_t>> out;
+    vector<pair<Flowkey5Tuple, FlowInfo>> out;
 
     uint64_t current_interval = static_cast<uint64_t>(trace.start_time() / interval);
     int j = 0;

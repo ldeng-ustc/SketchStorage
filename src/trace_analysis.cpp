@@ -22,20 +22,20 @@
 #include <netinet/udp.h>
 #include <pcap/pcap.h>
 
-#include "flow.h"
-#include "trace.h"
+#include "./modules/flow.h"
+#include "./modules/trace.h"
 
 using namespace std;
 
-typedef flowkey_5_tuple_t flowkey_t;
+typedef Flowkey5Tuple Flowkey;
 
-map<flowkey_t, flow_info_t> flowmap;
-vector<flow_info_t> flow_list;
+map<Flowkey, FlowInfo> flowmap;
+vector<FlowInfo> flow_list;
 
 const char DATA_PATH[] = "/data/caida/trace.bin";
 char errmsg[PCAP_ERRBUF_SIZE];
 
-vector<int> count_active_flows(const map<flowkey_t, flow_info_t> & flowmap, double interval) {
+vector<int> count_active_flows(const map<Flowkey, FlowInfo> & flowmap, double interval) {
     map<uint64_t, int> delta;
     for(auto flow: flowmap) {
         uint64_t l = (uint64_t)(flow.second.start_time / interval);
@@ -60,7 +60,7 @@ vector<int> count_unique_flows(trace_t trace, double interval) {
     vector<int> cnt_list;
     uint64_t ts = (uint64_t)(pktlist[0].ts / interval);
     int cnt = 0;
-    set<flowkey_t> flowset;
+    set<Flowkey> flowset;
     for(auto pkt: pktlist) {
         uint64_t t = (uint64_t)(pkt.ts / interval);
         if(t != ts) {
@@ -83,7 +83,7 @@ int main(int argc, char** argv) {
     trace.load(DATA_PATH);
     printf("%lf\n", (clock() - st) / (double)(CLOCKS_PER_SEC));
     for(auto pkt: trace.packet_list) {
-        const flowkey_5_tuple_t & key = pkt.key;
+        const Flowkey5Tuple & key = pkt.key;
         const double & pkt_ts = pkt.ts; 
 
         if(flowmap[key].pkt_cnt == 0) {
@@ -195,7 +195,7 @@ int main(int argc, char** argv) {
     
 
     file = fopen("./data/analysis/flows_duration_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_duration);
+    sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_duration);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double duration = flow_list[index].end_time - flow_list[index].start_time;
@@ -204,7 +204,7 @@ int main(int argc, char** argv) {
     fclose(file);
 
     file = fopen("./data/analysis/flows_size_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_size);
+    sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_size);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double size = flow_list[index].flow_size;
@@ -213,7 +213,7 @@ int main(int argc, char** argv) {
     fclose(file);
 
     file = fopen("./data/analysis/flows_pktcnt_distribution.csv", "w");
-    sort(flow_list.begin(), flow_list.end(), flow_info_t::lt_pkt_cnt);
+    sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_pkt_cnt);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
         double pktcnt = flow_list[index].pkt_cnt;

@@ -14,7 +14,7 @@
 #include "flow.h"
 
 struct packet_info_t {
-    flowkey_5_tuple_t key;
+    Flowkey5Tuple key;
     uint32_t size;
     double ts;
     template<typename T>
@@ -24,7 +24,7 @@ struct packet_info_t {
 int decode_packet(const pcap_pkthdr & pcap_hdr, const uint8_t *packet, packet_info_t & pkt_info) {
     double pkt_ts = (double)pcap_hdr.ts.tv_usec / 1000000 + pcap_hdr.ts.tv_sec;
     uint32_t pkt_len = pcap_hdr.caplen;
-    flowkey_5_tuple_t key;
+    Flowkey5Tuple key;
 
     ip* ip_hdr;
     tcphdr* tcp_hdr;
@@ -86,7 +86,7 @@ packet_info_t packet_info_t::random(T & gen) {
     packet_info_t pkt;
     std::uniform_int_distribution<uint32_t> r32;
     std::uniform_real_distribution<double> rdouble;
-    pkt.key = flowkey_5_tuple_t::random(gen);
+    pkt.key = Flowkey5Tuple::random(gen);
     pkt.size = static_cast<uint16_t>(r32(gen));
     pkt.ts = rdouble(gen);
     return pkt;

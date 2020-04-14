@@ -1,42 +1,60 @@
-DIR_OBJ = ./obj
-DIR_BIN = ./bin
-DIR_EVAL = eval
+CXX      := g++
+CXXFLAGS := --std=c++17
+LDFLAGS  := -lpcap
 
-EXECS_NAME = trace_preprocessing trace_analysis
-EXECS = $(patsubst %, ${DIR_BIN}/%, ${EXECS_NAME})
+BUILD    := ./build
+SRC_DIR  := ./src
+MOD_DIR  := $(SRC_DIR)/modules
+APP_DIR  := $(BUILD)/apps
+OBJ_DIR  := $(BUILD)/objects
+DAT_DIR  := ./data
 
-EVALS_NAME = flowradar_decoding_eval flowradar_caida_eval
-EVALS = $(patsubst %, ${DIR_BIN}/%, ${EVALS_NAME})
+INCLUDE  := $(wildcard $(SRC_DIR)/*.h) $(wildcard $(MOD_DIR)/*.h)
+SRC      := $(wildcard $(SRC_DIR)/*.cpp)
+MOD_SRC  := $(wildcard $(MOD_DIR)/*.cpp)
+OBJECTS  := $(patsubst %.cpp, $(OBJ_DIR)/%.o, $(notdir $(MOD_SRC)))
+TARGETS	 := $(patsubst %.cpp, $(APP_DIR)/%, $(notdir $(SRC)))
 
-OBJS_NAME = MurmurHash3.o
-OBJS = $(patsubst %, ${DIR_OBJ}/%, ${OBJS_NAME})
+EVAL_APP_DIR := $(APP_DIR)/eval
+EVAL_SRC_DIR := $(SRC_DIR)/eval
+EVAL_SRC     := $(wildcard $(EVAL_SRC_DIR)/*.cpp)
+EVAL_TARGETS := $(patsubst %.cpp, $(EVAL_APP_DIR)/%, $(notdir $(EVAL_SRC)))
 
-CC = g++
-LIBS = -lpcap
-CPPFLAGS = -Wall -g
+MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+MK_DIR  := $(dir $(MK_PATH))
 
-.phony: all clean
-all: ${EXECS} ${EVALS}
+.PHONY: all build clean debug info
 
-${DIR_BIN}/trace_analysis: trace_analysis.cpp ${OBJS}
-	@mkdir -p ${DIR_BIN}
-	$(CC) $(CPPFLAGS) $< -o $@ ${OBJS} ${LIBS}
+all: info build $(TARGETS) $(EVAL_TARGETS)
 
-${DIR_BIN}/trace_preprocessing: trace_preprocessing.cpp ${OBJS}
-	@mkdir -p ${DIR_BIN}
-	$(CC) $(CPPFLAGS) $< -o $@ ${OBJS} ${LIBS}
+info:
+	@echo mod_src: $(MOD_SRC)
+	@echo objects: $(OBJECTS)
+	@echo eval_src: $(EVAL_SRC)
+	@echo eval_targets: $(EVAL_TARGETS) 
+	@echo src: $(SRC)
+	@echo targets: $(TARGETS)
 
-${DIR_BIN}/flowradar_decoding_eval: ${DIR_EVAL}/flowradar_decoding_eval.cpp ${OBJS}
-	@mkdir -p ${DIR_BIN}
-	$(CC) $(CPPFLAGS) $< -o $@ ${OBJS} ${LIBS}
 
-${DIR_BIN}/flowradar_caida_eval: ${DIR_EVAL}/flowradar_caida_eval.cpp ${OBJS}
-	@mkdir -p ${DIR_BIN}
-	$(CC) $(CPPFLAGS) $< -o $@ ${OBJS} ${LIBS}
+$(OBJ_DIR)/%.o: $(MOD_DIR)/%.cpp $(INCLUDE)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -c $< -o $@ $(LDFLAGS)
 
-${DIR_OBJ}/%.o: %.cpp
-	@mkdir -p ${DIR_OBJ}
-	$(CC) $(CPPFLAGS) -c  $< -o $@
+$(APP_DIR)/%: $(SRC_DIR)/%.cpp $(OBJECTS)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+$(EVAL_APP_DIR)/%: $(EVAL_SRC_DIR)/%.cpp $(OBJECTS)
+	@mkdir -p $(@D)
+	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
+
+build:
+	@mkdir -p $(APP_DIR)
+	@mkdir -p $(OBJ_DIR)
+
+debug: CXXFLAGS += -DDEBUG -g
+debug: all
 
 clean:
-	rm -r bin obj
+	-@rm -rvf $(OBJ_DIR)/*
+	-@rm -rvf $(APP_DIR)/*

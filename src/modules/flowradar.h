@@ -12,10 +12,10 @@
 #include "bloom_filter.h"
 #include "MurmurHash3.h"
 
-flow_info_t flow;
+FlowInfo flow;
 
 struct __attribute__ ((__packed__)) flow_radar_element_t {
-    flowkey_5_tuple_t flow_xor;
+    Flowkey5Tuple flow_xor;
     uint8_t flow_count;
     uint16_t packet_count;
 };
@@ -154,7 +154,7 @@ public:
 
     static int decode(
         flow_radar_counting_table_t table, 
-        std::vector<std::pair<flowkey_5_tuple_t, flow_info_t>> & out
+        std::vector<std::pair<Flowkey5Tuple, FlowInfo>> & out
     );
 };
 
@@ -166,9 +166,9 @@ flow_radar_controller_t::~flow_radar_controller_t() {
 
 int flow_radar_controller_t::decode(
     flow_radar_counting_table_t table,
-    std::vector<std::pair<flowkey_5_tuple_t, flow_info_t>> & out
+    std::vector<std::pair<Flowkey5Tuple, FlowInfo>> & out
 ) {
-    std::vector<std::pair<flowkey_5_tuple_t, flow_info_t>> flows_list;
+    std::vector<std::pair<Flowkey5Tuple, FlowInfo>> flows_list;
     std::queue<uint32_t> q;
     for(unsigned i=0; i<table.table_size; i++) {
         if(table.counting_table[i].flow_count == 1) {
@@ -187,7 +187,7 @@ int flow_radar_controller_t::decode(
             continue;
         }
 
-        flow_info_t flow_info{0, 0, pkt_cnt, 0};
+        FlowInfo flow_info{0, 0, pkt_cnt, 0};
         out.push_back(std::make_pair(element.flow_xor, flow_info));
         element.flow_count -- ;
         element.flow_xor ^= flow_key;
