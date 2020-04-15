@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := --std=c++17
-LDFLAGS  := -lpcap
+LDFLAGS  := -lpcap -lrocksdb -lpthread -lz -ldl
 
 BUILD    := ./build
 SRC_DIR  := ./src
