@@ -3,12 +3,12 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
-exec_dir = "./bin/"
-exec_file = "flowradar_decoding_eval"
+exec_dir = "./build/apps/eval/"
+exec_file = "flowradar_caida_eval"
 exec_path = os.path.join(exec_dir, exec_file)
 
-csv_dir = "./data/evaluations/"
-img_dir = "./img"
+csv_dir = "./data/evaluations/flowradar_caida_eval/"
+img_dir = "./img/"
 
 K = 5
 L = 100
