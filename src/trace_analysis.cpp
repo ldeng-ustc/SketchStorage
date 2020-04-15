@@ -55,8 +55,8 @@ vector<int> count_active_flows(const map<Flowkey, FlowInfo> & flowmap, double in
     return cnt_list;
 }
 
-vector<int> count_unique_flows(trace_t trace, double interval) {
-    const vector<packet_info_t> & pktlist = trace.packet_list;
+vector<int> count_unique_flows(Trace trace, double interval) {
+    const vector<PacketInfo> & pktlist = trace.packet_list;
     vector<int> cnt_list;
     uint64_t ts = (uint64_t)(pktlist[0].ts / interval);
     int cnt = 0;
@@ -78,7 +78,7 @@ vector<int> count_unique_flows(trace_t trace, double interval) {
 }
 
 int main(int argc, char** argv) {
-    trace_t trace;
+    Trace trace;
     int st = clock();
     trace.load(DATA_PATH);
     printf("%lf\n", (clock() - st) / (double)(CLOCKS_PER_SEC));

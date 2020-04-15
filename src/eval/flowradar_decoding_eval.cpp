@@ -26,6 +26,7 @@
 #include "../modules/flow.h"
 #include "../modules/trace.h"
 #include "../modules/flowradar.h"
+#include "../modules/controller.h"
 
 using namespace std;
 
@@ -86,12 +87,12 @@ int main(int argc, char **argv) {
     for(int table_size=table_size_min; table_size<=table_size_max; table_size += step) {
         for(int i=0; i< repeat; i++) {
             int cnt = 0;
-            flow_radar_t flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
+            Flowradar flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
             vector<pair<Flowkey5Tuple, FlowInfo>> out;
             do {
-                flow_radar.update(packet_info_t::random(gen));
+                flow_radar.update(PacketInfo::random(gen));
                 cnt ++;
-            }while(!flow_radar_controller_t::decode(flow_radar.get_counting_table(), out));
+            }while(!Controller::decode(flow_radar.get_counting_table(), out));
             fprintf(file, i==0 ? "%d" : ",%d", cnt-1);
         }
         fprintf(file, "\n");

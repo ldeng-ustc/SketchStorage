@@ -24,3 +24,15 @@ Flowkey5Tuple Flowkey5Tuple::random(minstd_rand & gen) {
     key.proto = static_cast<uint8_t>(r(gen));
     return key;
 }
+
+bool FlowInfo::lt_duration(const FlowInfo & a, const FlowInfo & b) {
+    return (a.end_time - a.start_time) < (b.end_time - b.start_time);
+}
+
+bool FlowInfo::lt_pkt_cnt(const FlowInfo & a, const FlowInfo & b) {
+    return a.pkt_cnt < b.pkt_cnt;
+}
+
+bool FlowInfo::lt_size(const FlowInfo & a, const FlowInfo & b) {
+    return a.flow_size < b.flow_size;
+}

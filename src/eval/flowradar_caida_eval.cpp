@@ -26,7 +26,7 @@
 #include "../modules/packet.h"
 #include "../modules/flow.h"
 #include "../modules/trace.h"
-#include "../modules/flowradar.h"
+#include "../modules/controller.h"
 
 using namespace std;
 
@@ -79,15 +79,13 @@ void parse_args (int argc, char **argv)
     }
 }
 
-typedef flow_radar_controller_t controller_t;
-
 int main(int argc, char **argv) {
     parse_args(argc, argv);
 
-    trace_t trace;
+    Trace trace;
     trace.load_by_time(trace_path, interval * max_intervals);
     FILE * file = fopen(output_path, "w");
-    flow_radar_t flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
+    Flowradar flow_radar(filter_size, filter_num_hashes, table_size, table_num_hashes);
     vector<pair<Flowkey5Tuple, FlowInfo>> out;
 
     uint64_t current_interval = static_cast<uint64_t>(trace.start_time() / interval);
@@ -95,7 +93,7 @@ int main(int argc, char **argv) {
     for(auto pkt: trace.packet_list){
         if(static_cast<uint64_t>(pkt.ts / interval) != current_interval) {
             current_interval ++;
-            int failed = controller_t::decode(flow_radar.get_counting_table(), out);
+            int failed = Controller::decode(flow_radar.get_counting_table(), out);
             int decoded = out.size();
             assert(failed % table_num_hashes == 0);
             failed = failed / table_num_hashes;

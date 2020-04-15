@@ -33,7 +33,7 @@ int main(int argc, char **argv) {
             printf("errmsg: %s\n", errmsg);
             continue;
         }
-        trace_t trace(p);
+        Trace trace(p);
         trace.save(output_file, append);
         append = true;
         printf("converted: %s\ntrace_size: %d\n", full_path.c_str(), trace.pkt_cnt());

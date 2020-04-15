@@ -27,18 +27,9 @@ struct FlowInfo {
     uint32_t pkt_cnt;
     uint32_t flow_size;
 
-    static bool lt_duration(const FlowInfo & a, const FlowInfo & b) {
-        return (a.end_time - a.start_time) < (b.end_time - b.start_time);
-    }
-
-    static bool lt_pkt_cnt(const FlowInfo & a, const FlowInfo & b) {
-        return a.pkt_cnt < b.pkt_cnt;
-    }
-
-    static bool lt_size(const FlowInfo & a, const FlowInfo & b) {
-        return a.flow_size < b.flow_size;
-    }
-
+    static bool lt_duration(const FlowInfo & a, const FlowInfo & b);
+    static bool lt_pkt_cnt(const FlowInfo & a, const FlowInfo & b);
+    static bool lt_size(const FlowInfo & a, const FlowInfo & b);
 };
 
 #endif
