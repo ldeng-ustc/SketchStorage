@@ -38,8 +38,8 @@ char errmsg[PCAP_ERRBUF_SIZE];
 vector<int> count_active_flows(const map<Flowkey, FlowInfo> & flowmap, double interval) {
     map<uint64_t, int> delta;
     for(auto flow: flowmap) {
-        uint64_t l = (uint64_t)(flow.second.start_time / interval);
-        uint64_t r = (uint64_t)(flow.second.end_time / interval);
+        uint64_t l = (uint64_t)(flow.second.start_time_ / interval);
+        uint64_t r = (uint64_t)(flow.second.end_time_ / interval);
         delta[l] ++;
         delta[r + 1] --;
     }
@@ -86,19 +86,19 @@ int main(int argc, char** argv) {
         const Flowkey5Tuple & key = pkt.key;
         const double & pkt_ts = pkt.ts; 
 
-        if(flowmap[key].pkt_cnt == 0) {
-            flowmap[key].start_time = pkt_ts;
+        if(flowmap[key].pkt_cnt_ == 0) {
+            flowmap[key].start_time_ = pkt_ts;
         }
-        flowmap[key].end_time = pkt_ts;
-        flowmap[key].pkt_cnt ++;
-        flowmap[key].flow_size += pkt.size;
+        flowmap[key].end_time_ = pkt_ts;
+        flowmap[key].pkt_cnt_ ++;
+        flowmap[key].flow_size_ += pkt.size;
     }
 
     double maxtime = 0;
     double mintime = 1e100;
     double avgtime = 0;
     for(auto flow: flowmap) {
-        double flowtime = flow.second.end_time - flow.second.start_time;
+        double flowtime = flow.second.end_time_ - flow.second.start_time_;
         maxtime = max(maxtime, flowtime);
         mintime = min(mintime, flowtime);
         avgtime += flowtime;
@@ -174,7 +174,7 @@ int main(int argc, char** argv) {
     int single_pkt_flow_cnt = 0;
     fprintf(file, "flow_id,start,end,duration,packet_cnt,size\n");
     for(auto flow: flow_list) {
-        if(flow.pkt_cnt == 1){
+        if(flow.pkt_cnt_ == 1){
             single_pkt_flow_cnt ++;
         }
         else{
@@ -182,11 +182,11 @@ int main(int argc, char** argv) {
                 file,
                 "%d,%lf,%lf,%lf,%u,%u\n",
                 ++i,
-                flow.start_time,
-                flow.end_time,
-                flow.end_time - flow.start_time,
-                flow.pkt_cnt,
-                flow.flow_size 
+                flow.start_time_,
+                flow.end_time_,
+                flow.end_time_ - flow.start_time_,
+                flow.pkt_cnt_,
+                flow.flow_size_ 
             );
         }
     }
@@ -198,7 +198,7 @@ int main(int argc, char** argv) {
     sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_duration);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
-        double duration = flow_list[index].end_time - flow_list[index].start_time;
+        double duration = flow_list[index].end_time_ - flow_list[index].start_time_;
         fprintf(file, "%lf,%lf\n", i/100.0, duration);
     }
     fclose(file);
@@ -207,7 +207,7 @@ int main(int argc, char** argv) {
     sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_size);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
-        double size = flow_list[index].flow_size;
+        double size = flow_list[index].flow_size_;
         fprintf(file, "%lf,%lf\n", i/100.0, size);
     }
     fclose(file);
@@ -216,7 +216,7 @@ int main(int argc, char** argv) {
     sort(flow_list.begin(), flow_list.end(), FlowInfo::lt_pkt_cnt);
     for(int i=0; i<100; i++) {
         int index = (int)(i / 100.0 * flow_list.size());
-        double pktcnt = flow_list[index].pkt_cnt;
+        double pktcnt = flow_list[index].pkt_cnt_;
         fprintf(file, "%lf,%lf\n", i/100.0, pktcnt);
     }
     fclose(file);

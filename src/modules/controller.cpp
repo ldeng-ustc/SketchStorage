@@ -1,5 +1,7 @@
 #include "controller.h"
 
+using namespace std;
+
 Controller::Controller() {
 }
 
@@ -54,4 +56,15 @@ int Controller::decode(
         failed_cnt += table.counting_table[i].flow_count;
     }
     return failed_cnt;
+}
+
+int Controller::collaborative_decode(
+    CountingTable table,
+    std::vector<Flowkey5Tuple> known_keys,
+    std::vector<std::pair<Flowkey5Tuple, FlowInfo>> & out
+){
+    while(true) {
+        int ret = decode(table, out);
+
+    }
 }

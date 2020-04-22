@@ -4,8 +4,7 @@
 #include "flowradar.h"
 #include "double_hashing.h"
 
-class Controller
-{
+class Controller {
 public:
     
     Controller(/* args */);
@@ -13,6 +12,12 @@ public:
 
     static int decode(
         CountingTable table, 
+        std::vector<std::pair<Flowkey5Tuple, FlowInfo>> & out
+    );
+
+    static int collaborative_decode(
+        CountingTable table,
+        std::vector<Flowkey5Tuple> known_keys,
         std::vector<std::pair<Flowkey5Tuple, FlowInfo>> & out
     );
 };

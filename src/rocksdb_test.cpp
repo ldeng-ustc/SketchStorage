@@ -1,5 +1,5 @@
 #include <cstring>
-#include<iostream>
+#include <iostream>
 #include <vector>
 #include <rocksdb/table.h>
 #include <rocksdb/cache.h>
@@ -148,7 +148,7 @@ namespace ycsbc
 }
 
 int main() {
-    ycsbc::RocksDB rdb("./test");
+    ycsbc::RocksDB rdb("./data/rocksdb_test");
 
     if (rdb.Insert("abc", "value")) {
         cout << "test Insert OK" << endl;
