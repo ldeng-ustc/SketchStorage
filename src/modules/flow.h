@@ -5,6 +5,7 @@
 #include <cstdint>
 #include <cstring>
 
+#include "packet.h"
 #include "MurmurHash3.h"
 
 #pragma pack (1)
@@ -40,6 +41,7 @@ public:
     static bool lt_size(const FlowInfo & a, const FlowInfo & b);
 
     void Merge(const FlowInfo b);
+    void AddPacket(const PacketInfo pkt);
 };
 
 struct Flow{

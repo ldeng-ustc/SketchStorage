@@ -64,6 +64,13 @@ void FlowInfo::Merge(const FlowInfo b) {
     pkt_cnt_ += b.pkt_cnt_;
 }
 
+void FlowInfo::AddPacket(const PacketInfo pkt) {
+    start_time_ = min(start_time_, pkt.ts);
+    end_time_ = max(end_time_, pkt.ts);
+    flow_size_ += pkt.size;
+    pkt_cnt_ ++;
+}
+
 Flow::Flow() {
 }
 

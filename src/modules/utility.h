@@ -16,6 +16,17 @@ namespace sketchstorage {
         return tv;
     }
 
+    uint64_t GetEpochId(timeval ts, double epoch_time=0.001) {
+        uint64_t epoch_id = static_cast<uint64_t>(ts.tv_sec / epoch_time);
+        double epoch_time_us = epoch_time * 1e6;
+        epoch_id += static_cast<uint64_t>(ts.tv_usec / epoch_time_us);
+        return epoch_id; 
+    }
+
+    uint64_t GetEpochId(double ts, double epoch_time=0.001) {
+        return GetEpochId(ConvertDoubleToTimeval(ts), epoch_time);
+    }
+
     int cmp_timeval(timeval a, timeval b) {
         if(a.tv_sec != b.tv_sec) {
             return a.tv_sec - b.tv_sec;
