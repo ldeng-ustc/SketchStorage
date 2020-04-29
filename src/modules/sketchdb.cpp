@@ -37,73 +37,32 @@ namespace sketchstorage
 
     }
 
-    bool SketchDB::Read(const string &key)
-    {
+    bool SketchDB::Read(const timeval ts, std::vector<Flow> * result) {
         rocksdb::ReadOptions options(false, true); //verify, cache
-
-        std::string value;
-        rocksdb::Slice key_(key);
-        rocksdb::Status s = db_->Get(options, key_, &value);
-        if(s.IsNotFound())
-        {
+        rocksdb::Slice key = TimevalToSlice(ts);
+        string value;
+        rocksdb::Status s = db_->Get(options, key, &value);
+        if(s.IsNotFound()) {
             return false;
         }
-        
-        if(!s.ok())
-        {
+        if(!s.ok()) {
             cerr << "read error!" << endl;
             cerr << s.ToString() << endl;
             exit(1);
         }
 
-        return true;
-    }
-
-    bool SketchDB::Insert(const string &key, const string &value)
-    {
-        rocksdb::Status s;
-        s = db_->Put(rocksdb::WriteOptions(), rocksdb::Slice(key), rocksdb::Slice(value));
-        if(!s.ok())
-        {
-            cerr << "insert error" << endl;
-            cerr << s.ToString() << endl;
-            exit(1);
+        const Flow * flows_list = reinterpret_cast<const Flow *>(value.data());
+        int flow_cnt = value.size() / sizeof(Flow);
+        for(int i = 0; i < flow_cnt; i++) {
+            result->push_back(flows_list[i]);
         }
-        
         return true;
     }
 
-    bool SketchDB::Delete(const string &key)
-    {
-        string value;
-        return Insert(key, value);
+    void SketchDB::Close() {
     }
 
-    bool SketchDB::Scan(const string &key, int len)
-    {
-        rocksdb::ReadOptions options(false, true); //verify, cache
-        rocksdb::Iterator* iter = db_->NewIterator(options);
-        iter->Seek(key);
-        for (int i = 0; i < len; i++) {
-            // iter->key();
-            // iter->value();
-            iter->Next();
-        }
-        delete iter;
-        return true;
-    }
-
-    bool SketchDB::Update(const string &key, const string &value)
-    {
-        return Insert(key, value);
-    }
-
-    void SketchDB::Close()
-    {
-    }
-
-    void SketchDB::printStats()
-    {
+    void SketchDB::printStats() {
         std::string stat_str;
         db_->GetProperty("rocksdb.stats",&stat_str);
         cout<< stat_str <<endl;
@@ -116,7 +75,7 @@ namespace sketchstorage
         rocksdb::Status s;
         rocksdb::Slice key;
         rocksdb::Slice val;
-        key = ConvertTimevalToSlice(ts);
+        key = TimevalToSlice(ts);
         val = rocksdb::Slice(reinterpret_cast<const char *>(flows.data()), flows.size() * sizeof(Flow)); 
         s = db_->Put(rocksdb::WriteOptions(), key, val);
         if(!s.ok())
@@ -125,6 +84,17 @@ namespace sketchstorage
             cerr << s.ToString() << endl;
             exit(1);
         }
+
+#ifndef NDEBUG
+        //Get Test 
+        rocksdb::ReadOptions options(false, true);
+        string read_val;
+        s = db_->Get(options, key, &read_val);
+        if(s.IsNotFound()) {
+            cerr << s.ToString() << endl;
+            exit(-1);
+        }
+#endif
         return true;
     }
 
@@ -134,8 +104,8 @@ namespace sketchstorage
         rocksdb::Iterator* iter = db_->NewIterator(options);
         rocksdb::Slice key_start;
         rocksdb::Slice key_end;
-        key_start = ConvertTimevalToSlice(ts_start);
-        key_end = ConvertTimevalToSlice(ts_end);
+        key_start = TimevalToSlice(ts_start);
+        key_end = TimevalToSlice(ts_end);
         iter->Seek(key_start);
         while(iter->Valid() && iter->key().compare(key_end) < 0) {
             const Flow * flow_list = reinterpret_cast<const Flow *>(iter->value().data());
@@ -154,11 +124,11 @@ namespace sketchstorage
         return true;
     }
 
-    bool SketchDB::Read(const Flowkey5Tuple key, std::vector<FlowInfo> * result) {
+    bool SketchDB::GetDetailInfo(const Flowkey5Tuple key, std::vector<FlowInfo> * result) {
         rocksdb::ReadOptions options(false, true); //verify, cache
 
         for(timeval ts: flows_index_[key]) {
-            rocksdb::Slice key_slice = ConvertTimevalToSlice(ts);
+            rocksdb::Slice key_slice = TimevalToSlice(ts);
             string value;
             rocksdb::Status s = db_ -> Get(options, key_slice, &value);
             if(!s.ok()) {

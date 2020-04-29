@@ -11,7 +11,7 @@
 #include <netinet/udp.h>
 #include <pcap/pcap.h>
 
-#include "flow.h"
+#include "flowkey.h"
 
 struct PacketInfo {
     Flowkey5Tuple key;

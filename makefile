@@ -20,10 +20,10 @@ EVAL_SRC_DIR := $(SRC_DIR)/eval
 EVAL_SRC     := $(wildcard $(EVAL_SRC_DIR)/*.cpp)
 EVAL_TARGETS := $(patsubst %.cpp, $(EVAL_APP_DIR)/%, $(notdir $(EVAL_SRC)))
 
-MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
-MK_DIR  := $(dir $(MK_PATH))
+#MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
+#MK_DIR  := $(dir $(MK_PATH))
 
-.PHONY: all build clean debug info
+.PHONY: all clean debug info
 
 all: info build $(TARGETS) $(EVAL_TARGETS)
 

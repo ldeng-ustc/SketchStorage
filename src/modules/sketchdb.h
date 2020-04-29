@@ -24,21 +24,13 @@ namespace sketchstorage
     public :
         SketchDB(const char *dbfilename);
 
-        bool Read(const std::string &key);
-
-        bool Scan(const std::string &key, int len);
-
-        bool Update(const std::string &key, const std::string &value);
-
-        bool Insert(const std::string &key, const std::string &value);
-
-        bool Delete(const std::string &key);
+        bool Read(const timeval ts, std::vector<Flow> * result);
        
         bool Insert(const timeval ts, const std::vector<Flow> & flow_list);
 
         bool Scan(const timeval ts_start, const timeval ts_end, std::vector<Flow> * result);
 
-        bool Read(const Flowkey5Tuple key, std::vector<FlowInfo> * result);
+        bool GetDetailInfo(const Flowkey5Tuple key, std::vector<FlowInfo> * result);
 
 
         ~SketchDB();

@@ -31,7 +31,8 @@ int Controller::decode(
             continue;
         }
 
-        FlowInfo flow_info{0, 0, pkt_cnt, 0};
+        FlowInfo flow_info;
+        flow_info.pkt_cnt_ = pkt_cnt;
         out.push_back(std::make_pair(element.flow_xor, flow_info));
         element.flow_count -- ;
         element.flow_xor ^= flow_key;

@@ -7,7 +7,9 @@
 #include "./modules/trace.h"
 
 const int FILENAME_BUF_SIZE = 200;
-const char * DEFAULT_OUTPATH = "trace.bin";
+const char * DEFAULT_PCAP_DIR = "./data/caida";
+const char * DEFAULT_INPUT_PATH = "./data/caida/pcap_list.txt";
+const char * DEFAULT_OUTPUT_PATH = "./data/caida/trace.bin";
 
 int main(int argc, char **argv) {
     if(argc < 3) {
@@ -16,14 +18,17 @@ int main(int argc, char **argv) {
             "then write packets info to an single binary file."
         );
         printf("Usage:\n%s pcap_dir input_file [output_file]\n", argv[0]);
-        return -1;
     }
 
-    FILE *fin = fopen(argv[2], "r");
-    std::string dir(argv[1]);
+    const char * pcap_dir = argc < 2 ? DEFAULT_PCAP_DIR : argv[1];
+    const char * input_file = argc < 3 ? DEFAULT_INPUT_PATH : argv[2]; 
+    const char * output_file = argc < 4 ? DEFAULT_OUTPUT_PATH : argv[3];
+
+
+    FILE *fin = fopen(input_file, "r");
+    std::string dir(pcap_dir);
     char filename[FILENAME_BUF_SIZE];
     char errmsg[PCAP_ERRBUF_SIZE];
-    const char * output_file = argc < 4 ? DEFAULT_OUTPATH : argv[3];
     bool append = false;
     while(fgets(filename, FILENAME_BUF_SIZE, fin)) {
         std::string full_path = dir + "/" + filename;
