@@ -1,6 +1,6 @@
 #include "utility.h"
 namespace sketchstorage {
-    double TimevalToDouble(timeval ts) {
+    double TimevalToDouble(const timeval & ts) {
         return static_cast<double>(ts.tv_sec) + (ts.tv_usec / 1e6) ;
     }
 
@@ -11,7 +11,7 @@ namespace sketchstorage {
         return tv;
     }
 
-    uint64_t TimevalToLong(timeval ts) {
+    uint64_t TimevalToLong(const timeval & ts) {
         return (ts.tv_sec * 1000000) + ts.tv_usec;
     }
 
@@ -19,7 +19,7 @@ namespace sketchstorage {
         return {static_cast<time_t>(ts / 1000000), static_cast<suseconds_t>(ts % 1000000)};
     }
 
-    timeval GetEpochId(timeval ts, double epoch_time) {
+    timeval GetEpochId(const timeval & ts, double epoch_time) {
         uint64_t epoch_time_us = static_cast<uint64_t>(1e6 * epoch_time);
         uint64_t long_ts = TimevalToLong(ts);
         return LongToTimeval(long_ts - long_ts % epoch_time_us); 
@@ -33,7 +33,7 @@ namespace sketchstorage {
         return GetEpochId(LongToTimeval(ts), epoch_time);
     }
 
-    int CmpTimeval(timeval a, timeval b) {
+    int CmpTimeval(const timeval & a, const timeval & b) {
         if(a.tv_sec != b.tv_sec) {
             return a.tv_sec - b.tv_sec;
         }
@@ -46,7 +46,7 @@ namespace sketchstorage {
         return rocksdb::Slice(reinterpret_cast<const char *>(&ts), sizeof(ts));
     }
 
-    timeval SliceToTimeval(rocksdb::Slice slice) {
+    timeval SliceToTimeval(const rocksdb::Slice & slice) {
         return *reinterpret_cast<const timeval *>(slice.data());
     }
 }

@@ -1,6 +1,7 @@
 #ifndef __FLOW_H_
 #define __FLOW_H_
 
+#include <vector>
 #include <random>
 #include <cstdio>
 #include <cstdint>
@@ -11,7 +12,7 @@
 #include "packet.h"
 #include "MurmurHash3.h"
 
-
+const int FlowIteratorBufferSize = 1000;
 
 class FlowInfo {
 public:
@@ -48,5 +49,34 @@ struct FlowHash {
     std::size_t operator()(Flowkey5Tuple const & key) const;
 };
 
+struct FlowBatchItem {
+    Flowkey5Tuple flowkey;
+    uint32_t flow_size;
+    uint32_t pkt_cnt;
+};
+
+struct FlowBatch {
+    uint64_t epoch_id;
+    std::vector<FlowBatchItem> items;
+};
+
+class FlowIterator {
+    FILE * file_;
+    Flow buf_[FlowIteratorBufferSize];
+    int pos_;
+    int end_pos_;
+public:
+    FlowIterator(const char * filename);
+    const Flow * next();
+    Flow operator * () const;
+    FlowIterator & operator ++ ();
+};
+
+class FlowBatchIterator {
+    FILE * file_;
+public:
+    FlowBatchIterator(const char * filename);
+    bool next(FlowBatch * ret);
+};
 
 #endif

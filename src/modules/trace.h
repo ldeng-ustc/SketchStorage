@@ -8,6 +8,8 @@
 
 #include "packet.h"
 
+const int TraceIteratorBufferSize = 1000;
+
 class Trace {
 public:
     std::vector<PacketInfo> packet_list;
@@ -19,6 +21,18 @@ public:
     int save(const char * filename, bool append=false);
     int load(const char * filename, bool append=false);
     int load_by_time(const char *filename, double duration, bool append=false);
+};
+
+class TraceIterator {
+    FILE * file_;
+    PacketInfo buf_[TraceIteratorBufferSize];
+    int pos_;
+    int end_pos_;
+public:
+    TraceIterator(const char * filename);
+    bool next(PacketInfo * pkt);
+    PacketInfo operator * () const;
+    TraceIterator & operator ++ ();
 };
 
 #endif

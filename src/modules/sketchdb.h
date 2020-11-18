@@ -19,26 +19,39 @@
 
 namespace sketchstorage
 {
+    class TimevalComparator : public rocksdb::Comparator {
+    public:
+        int Compare(const rocksdb::Slice& a, const rocksdb::Slice& b) const;
+
+        // Ignore the following methods for now:
+        const char* Name() const;
+        void FindShortestSeparator(std::string*, const rocksdb::Slice&) const;
+        void FindShortSuccessor(std::string*) const;
+    };
 
     class SketchDB {
     public :
         SketchDB(const char *dbfilename);
 
-        bool Read(const timeval ts, std::vector<Flow> * result);
-       
-        bool Insert(const timeval ts, const std::vector<Flow> & flow_list);
-
+        bool PutFlowset(const timeval ts, const std::vector<Flow> & flows_list);
+        bool PutFlowset_Fake(const timeval ts, const std::vector<Flow> & flows_list);
+        bool PutFlowset_WithoutSwitch(const timeval ts, const std::vector<Flow> & flows_list);
+        bool Get(const timeval ts, std::vector<Flow> * result);
         bool Scan(const timeval ts_start, const timeval ts_end, std::vector<Flow> * result);
-
-        bool GetDetailInfo(const Flowkey5Tuple key, std::vector<FlowInfo> * result);
-
-
+        bool GetFlow(Flowkey5Tuple key, 
+            timeval st, timeval ed, std::vector<FlowInfo> * result);
         ~SketchDB();
         void printStats();
         void Close();
     private:
+        typedef FlowInfo CounterType;
+        typedef Flowkey5Tuple Flowkey ;
+        typedef std::vector<std::pair<timeval, CounterType>> CounterList;
+        typedef std::unordered_map<Flowkey5Tuple, CounterList, FlowHash> HashTable;
         rocksdb::DB *db_;
-        std::unordered_map<Flowkey5Tuple, std::vector<timeval>, FlowHash> flows_index_;
+        timeval index_timestamp_;
+        HashTable * flows_index_;
+        HashTable * flows_index_old_;
     };
 }
 

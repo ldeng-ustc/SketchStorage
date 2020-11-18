@@ -93,3 +93,44 @@ int Trace::load_by_time(const char *filename, double duration, bool append) {
     fclose(file);
     return 0;
 }
+
+TraceIterator::TraceIterator(const char * filename): pos_(0) {
+    file_ = fopen(filename, "rb");
+    if(file_ == nullptr) {
+        printf("failed to open: %s\n", filename);
+        end_pos_ = 0;
+        return;
+    }
+    end_pos_ = fread(buf_, sizeof(PacketInfo), TraceIteratorBufferSize, file_);
+}
+
+bool TraceIterator::next(PacketInfo * pkt) {
+    if(end_pos_ == 0) {
+        return false;
+    }
+    *pkt = buf_[pos_ ++];
+    if(pos_ == end_pos_) {
+        pos_ = 0;
+        end_pos_ = fread(buf_, sizeof(PacketInfo), TraceIteratorBufferSize, file_);
+    }
+    return true;
+}
+
+PacketInfo TraceIterator::operator * () const {
+    if(end_pos_ == 0) {
+        throw "TraceIterator: OutOfRange";
+    }
+    return buf_[pos_];
+}
+
+TraceIterator & TraceIterator::operator ++ () {
+    if(end_pos_ == 0) {
+        throw "TraceIterator: OutOfRange";
+    }
+    pos_ ++;
+    if(pos_ == end_pos_) {
+        pos_ = 0;
+        end_pos_ = fread(buf_, sizeof(PacketInfo), TraceIteratorBufferSize, file_);
+    }
+    return *this;
+}

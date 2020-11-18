@@ -4,11 +4,27 @@ using namespace std;
 using namespace sketchstorage;
 namespace sketchstorage
 {
+    int TimevalComparator::Compare(const rocksdb::Slice& a, const rocksdb::Slice& b) const {
+        timeval ta = SliceToTimeval(a);
+        timeval tb = SliceToTimeval(b);
+        return CmpTimeval(ta, tb);
+    }
+
+    const char* TimevalComparator::Name() const {
+        return "TimevalComparator";
+    }
+
+    void TimevalComparator::FindShortestSeparator(std::string*, const rocksdb::Slice&) const { }
+    void TimevalComparator::FindShortSuccessor(std::string*) const { }
+
+
     SketchDB::SketchDB(const char *dbfilename)
     {
         rocksdb::Options options;
 
+        TimevalComparator * cmp = new TimevalComparator();
         options.create_if_missing = true;
+        options.comparator = cmp;
         options.compression = rocksdb::kNoCompression;
         options.max_open_files = 100000;
         options.write_buffer_size = 64 << 20;
@@ -35,9 +51,13 @@ namespace sketchstorage
             exit(1);
         }
 
+        flows_index_ = new HashTable();
+        flows_index_old_ = new HashTable();
+        flows_index_->reserve(300 * 1000);
+        index_timestamp_ = {0, 0};
     }
 
-    bool SketchDB::Read(const timeval ts, std::vector<Flow> * result) {
+    bool SketchDB::Get(const timeval ts, std::vector<Flow> * result) {
         rocksdb::ReadOptions options(false, true); //verify, cache
         rocksdb::Slice key = TimevalToSlice(ts);
         string value;
@@ -60,6 +80,7 @@ namespace sketchstorage
     }
 
     void SketchDB::Close() {
+        db_->Close();
     }
 
     void SketchDB::printStats() {
@@ -68,34 +89,67 @@ namespace sketchstorage
         cout<< stat_str <<endl;
     }
 
-    bool SketchDB::Insert(const timeval ts, const vector<Flow> & flows) {
-        for(int i = 0; i < flows.size(); i++) {
-            flows_index_[flows[i].flowkey].push_back(ts);
+    bool SketchDB::PutFlowset(const timeval ts, const vector<Flow> & flows_list) {
+        auto now_second = GetEpochId(ts, 1);
+        if(CmpTimeval(index_timestamp_, now_second) != 0) {
+            delete flows_index_old_;
+            flows_index_old_ = flows_index_;
+            flows_index_ = new HashTable();
+            flows_index_->reserve(300 * 1000);
+            index_timestamp_ = now_second;
+        }
+        for(int i = 0; i < flows_list.size(); i++) {
+            (*flows_index_)[flows_list[i].flowkey].push_back({ts, flows_list[i].flowinfo});
         }
         rocksdb::Status s;
         rocksdb::Slice key;
         rocksdb::Slice val;
         key = TimevalToSlice(ts);
-        val = rocksdb::Slice(reinterpret_cast<const char *>(flows.data()), flows.size() * sizeof(Flow)); 
+        val = rocksdb::Slice(reinterpret_cast<const char *>(flows_list.data()), flows_list.size() * sizeof(Flow)); 
         s = db_->Put(rocksdb::WriteOptions(), key, val);
         if(!s.ok())
         {
             cerr << "insert error" << endl;
             cerr << s.ToString() << endl;
-            exit(1);
+            return false;
         }
-
-#ifndef NDEBUG
-        //Get Test 
-        rocksdb::ReadOptions options(false, true);
-        string read_val;
-        s = db_->Get(options, key, &read_val);
-        if(s.IsNotFound()) {
-            cerr << s.ToString() << endl;
-            exit(-1);
-        }
-#endif
         return true;
+    }
+
+    bool SketchDB::PutFlowset_Fake(const timeval ts, const vector<Flow> & flows_list) {
+        rocksdb::Status s;
+        rocksdb::Slice key;
+        rocksdb::Slice val;
+        key = TimevalToSlice(ts);
+        val = rocksdb::Slice(reinterpret_cast<const char *>(flows_list.data()), flows_list.size() * sizeof(Flow)); 
+        s = db_->Put(rocksdb::WriteOptions(), key, val);
+        if(!s.ok())
+        {
+            cerr << "insert error" << endl;
+            cerr << s.ToString() << endl;
+            return false;
+        }
+        return true;
+    }
+
+    bool SketchDB::PutFlowset_WithoutSwitch(const timeval ts, const std::vector<Flow> & flows_list) {
+        auto now_second = GetEpochId(ts, 1);
+        for(int i = 0; i < flows_list.size(); i++) {
+            (*flows_index_)[flows_list[i].flowkey].push_back({ts, flows_list[i].flowinfo});
+        }
+        rocksdb::Status s;
+        rocksdb::Slice key;
+        rocksdb::Slice val;
+        key = TimevalToSlice(ts);
+        val = rocksdb::Slice(reinterpret_cast<const char *>(flows_list.data()), flows_list.size() * sizeof(Flow)); 
+        s = db_->Put(rocksdb::WriteOptions(), key, val);
+        if(!s.ok())
+        {
+            cerr << "insert error" << endl;
+            cerr << s.ToString() << endl;
+            return false;
+        }
+        return true;       
     }
 
     bool SketchDB::Scan(const timeval ts_start, const timeval ts_end, std::vector<Flow> * result) {
@@ -110,6 +164,7 @@ namespace sketchstorage
         while(iter->Valid() && iter->key().compare(key_end) < 0) {
             const Flow * flow_list = reinterpret_cast<const Flow *>(iter->value().data());
             int flow_cnt = iter->value().size() / sizeof(Flow);
+            //printf("ts: %f size: %lu\n", TimevalToDouble(SliceToTimeval(iter->key())), iter->value().size() / sizeof(Flow));
             for(int i = 0; i < flow_cnt; i++) {
                 Flow flow = flow_list[i];
                 flows_table[flow.flowkey].Merge(flow.flowinfo);
@@ -124,27 +179,24 @@ namespace sketchstorage
         return true;
     }
 
-    bool SketchDB::GetDetailInfo(const Flowkey5Tuple key, std::vector<FlowInfo> * result) {
+    bool SketchDB::GetFlow(Flowkey5Tuple key, timeval st, 
+                            timeval ed, std::vector<FlowInfo> * result) {
         rocksdb::ReadOptions options(false, true); //verify, cache
-
-        for(timeval ts: flows_index_[key]) {
-            rocksdb::Slice key_slice = TimevalToSlice(ts);
-            string value;
-            rocksdb::Status s = db_ -> Get(options, key_slice, &value);
-            if(!s.ok()) {
-                cerr << "read error!" << endl;
-                cerr << s.ToString() << endl;
-                exit(1);
+        if(flows_index_old_->count(key)) {
+            for(auto pair_ts_counter: (*flows_index_old_)[key]) {
+                timeval ts = pair_ts_counter.first;
+                CounterType counter = pair_ts_counter.second;
+                if(CmpTimeval(st, ts) <= 0 && CmpTimeval(ts, ed) <= 0) {
+                    result->push_back(counter);
+                }
             }
-            if(s.IsNotFound()) {
-                return false;
-            }
-            int num_flows = value.size() / sizeof(Flow);
-            const Flow * flows = reinterpret_cast<const Flow *>(value.data()); 
-            for(int i = 0; i < num_flows; i++) {
-                if(flows[i].flowkey == key) {
-                    result->push_back(flows[i].flowinfo);
-                    break;
+        }
+        if(flows_index_->count(key)) {
+            for(auto pair_ts_counter: (*flows_index_)[key]) {
+                timeval ts = pair_ts_counter.first;
+                CounterType counter = pair_ts_counter.second;
+                if(CmpTimeval(st, ts) <= 0 && CmpTimeval(ts, ed) <= 0) {
+                    result->push_back(counter);
                 }
             }
         }
@@ -153,6 +205,7 @@ namespace sketchstorage
 
     SketchDB::~SketchDB()
     {
+        db_->Close();
         delete db_;
     }
 }

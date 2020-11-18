@@ -72,3 +72,64 @@ size_t GetFlowHash(Flowkey5Tuple key) {
 size_t FlowHash::operator()(Flowkey5Tuple const & key) const {
     return GetFlowHash(key);
 }
+
+FlowIterator::FlowIterator(const char * filename): pos_(0) {
+    file_ = fopen(filename, "rb");
+    if(file_ == nullptr) {
+        printf("failed to open: %s\n", filename);
+        end_pos_ = 0;
+        return;
+    }
+    end_pos_ = fread(buf_, sizeof(Flow), FlowIteratorBufferSize, file_);
+}
+
+const Flow * FlowIterator::next() {
+    if(end_pos_ == 0) {
+        return NULL;
+    }
+    if(pos_ == end_pos_) {
+        pos_ = 0;
+        end_pos_ = fread(buf_, sizeof(Flow), FlowIteratorBufferSize, file_);
+    }
+    return &buf_[pos_ ++];
+}
+
+Flow FlowIterator::operator * () const {
+    if(end_pos_ == 0) {
+        throw "TraceIterator: OutOfRange";
+    }
+    return buf_[pos_];
+}
+
+FlowIterator & FlowIterator::operator ++ () {
+    if(end_pos_ == 0) {
+        throw "FlowIterator: OutOfRange";
+    }
+    pos_ ++;
+    if(pos_ == end_pos_) {
+        pos_ = 0;
+        end_pos_ = fread(buf_, sizeof(Flow), FlowIteratorBufferSize, file_);
+    }
+    return *this;
+}
+
+FlowBatchIterator::FlowBatchIterator(const char * filename) {
+    file_ = fopen(filename, "rb");
+    if(file_ == nullptr) {
+        printf("failed to open: %s\n", filename);
+        return;
+    }
+}
+
+bool FlowBatchIterator::next(FlowBatch * ret) {
+    uint64_t header[2];
+    if(fread(header, sizeof(uint64_t), 2, file_) != 2) {
+        return false;
+    }
+    uint64_t epoch_id = header[0];
+    uint64_t cnt = header[1];
+    ret->epoch_id = epoch_id;
+    ret->items.resize(cnt);
+    fread(ret->items.data(), sizeof(FlowBatchItem), cnt, file_);
+    return true;
+}

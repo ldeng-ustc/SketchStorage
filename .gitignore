@@ -4,3 +4,4 @@ img/
 build/
 data.csv
 .vscode/
+perf*
