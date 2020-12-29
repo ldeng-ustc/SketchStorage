@@ -4,6 +4,8 @@
 #include <string>
 #include <unordered_map>
 
+#include "cxxopts.hpp"
+
 #include "modules/flow.h"
 #include "modules/profiling.h"
 #include "modules/trace.h"
@@ -12,47 +14,37 @@
 using namespace std;
 using namespace sketchstorage;
 
-const char* Trace_Path = "./data/caida/trace.bin";
-const char* Output_Path = "./data/caida/flow.bin";
-int duration_ms = 60000;
-int scan_ms = 100;
-bool insert_without_index = false;
+cxxopts::ParseResult args;
 
 void parse_args(int argc, char** argv) {
-    int c;
-    while ((c = getopt(argc, argv, "d:o:t:")) != -1) {
-        switch (c) {
-        case 'd':
-            sscanf(optarg, "%d", &duration_ms);
-            break;
-        case 'o':
-            Output_Path = optarg;
-            break;
-        case 't':
-            sscanf(optarg, "%d", &scan_ms);
-        default:
-            break;
-        }
-    }
+    cxxopts::Options options("dataplane", "Simulate sketch dataplane, aggregate packets to flows periodically, output data to binary file.");
+    options.add_options()
+        ("e,epoch", "The epoch of flow informations (s).", cxxopts::value<double>()->default_value("0.001"))
+        ("o,output", "Output file.", cxxopts::value<string>()->default_value("./data/caida/flow.bin"))
+        ("t,duration", "Duration time (ms).", cxxopts::value<uint32_t>()->default_value("1000"))
+        ("i,input", "Path to trace binary file.", cxxopts::value<string>()->default_value("./data/caida/trace.bin"))
+        ;
+    args = options.parse(argc, argv);
 }
 
 int main(int argc, char** argv) {
     parse_args(argc, argv);
     FILE *fout;
-    fout = fopen(Output_Path, "wb");
+    fout = fopen(args["output"].as<string>().c_str(), "wb");
 
-    TraceIterator trace_iter(Trace_Path);
+    TraceIterator trace_iter(args["input"].as<string>().c_str());
     double trace_start_time = (*trace_iter).ts;
-    timeval epoch_id = GetEpochId(trace_start_time);
-    timeval duration = {duration_ms / 1000, duration_ms % 1000 * 1000};
+    timeval epoch_id = GetEpochId(trace_start_time, args["epoch"].as<double>());
+    timeval duration = {args["duration"].as<uint32_t>() / 1000, args["duration"].as<uint32_t>() % 1000 * 1000};
     timeval end_epoch;
     timeradd(&epoch_id, &duration, &end_epoch);
     unordered_map<Flowkey5Tuple, FlowInfo, FlowHash> flows_map;
     PacketInfo pkt;
+    uint64_t total_flow = 0;
     while (trace_iter.next(&pkt)) {
         //printf("epoch_id: %d\n", GetEpochId(pkt.ts));
         //fflush(stdout);
-        if (CmpTimeval(GetEpochId(pkt.ts), epoch_id) != 0) {
+        if (CmpTimeval(GetEpochId(pkt.ts, args["epoch"].as<double>()), epoch_id) != 0) {
             //printf("epoch: %d\n", epoch_id.tv_usec);
             //fflush(stdout);
             vector<Flow> flows_list;
@@ -64,6 +56,7 @@ int main(int argc, char** argv) {
             uint64_t cnt = flows_list.size();
             fwrite(&epoch_id_ull, sizeof(uint64_t), 1, fout);
             fwrite(&cnt, sizeof(uint64_t), 1, fout);
+            total_flow += cnt;
             for(auto flow: flows_list) {
                 FlowBatchItem item = {flow.flowkey, flow.flowinfo.flow_size_, flow.flowinfo.pkt_cnt_};
                 fwrite(&item, sizeof(FlowBatchItem), 1, fout);
@@ -76,6 +69,7 @@ int main(int argc, char** argv) {
         }
         flows_map[pkt.key].AddPacket(pkt);
     }
-
+    printf("total flow: %lu\n", total_flow);
+    // printf("%lu\n", sizeof(FlowBatchItem));
     return 0;
 }

@@ -7,7 +7,6 @@
 #include <cstring>
 #include <arpa/inet.h>
 
-#pragma pack (1)
 struct Flowkey5Tuple {
     // 8 (4*2) bytes
     uint32_t src_ip;  // source IP address

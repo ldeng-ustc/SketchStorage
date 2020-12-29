@@ -1,6 +1,6 @@
 CXX      := g++
-CXXFLAGS := --std=c++17 -I /usr/include/mysql-cppconn-8 -L /home/ldeng/LevelDB_Embedded-Secondary-Index
-LDFLAGS  := -lpcap -lleveldb -lrocksdb -lpthread -lz -ldl -lmysqlcppconn8
+CXXFLAGS := --std=c++17 -I /usr/include/mysql-cppconn-8 -I /home/ldeng/rocksdb/include -L /home/ldeng/rocksdb -L /home/ldeng/LevelDB_Embedded-Secondary-Index
+LDFLAGS  := -lpcap -lleveldb -lrocksdb -lpthread -lbz2 -lz -ldl -lmysqlcppconn8
 
 BUILD    := ./build
 SRC_DIR  := ./src
@@ -23,6 +23,7 @@ EVAL_TARGETS := $(patsubst %.cpp, $(EVAL_APP_DIR)/%, $(notdir $(EVAL_SRC)))
 #MK_PATH := $(abspath $(lastword $(MAKEFILE_LIST)))
 #MK_DIR  := $(dir $(MK_PATH))
 
+.PRECIOUS: $(OBJECTS)
 .PHONY: all clean debug info
 
 all: info build $(TARGETS) $(EVAL_TARGETS)

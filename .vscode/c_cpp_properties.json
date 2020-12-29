@@ -1,0 +1,9 @@
+{
+  "configurations": [
+    {
+        "includePath": ["/usr/include/mysql-cppconn-8", "/home/ldeng/rocksdb/include"],
+        "cppStandard": "c++17"
+    }
+  ],
+  "version": 4
+}
