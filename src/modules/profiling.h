@@ -18,9 +18,17 @@ void process_mem_usage(double * vm_usage, double * resident_set);
 
 class Clock {
     std::chrono::steady_clock::time_point start_;
+    std::chrono::duration<double> tmp_;
+    
 public:
-    void start();
-    time_t stop();
+    // Start clock and clear.
+    void Start();
+    // Pause clock.
+    double Pause();
+    // Restart clock.
+    void Restart();
+    // Stop clock and return duration seconds. 
+    double Stop();
 };
 
 #endif

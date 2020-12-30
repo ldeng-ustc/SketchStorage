@@ -54,6 +54,19 @@
         "chrono": "cpp",
         "ctime": "cpp",
         "ratio": "cpp",
-        "list": "cpp"
+        "list": "cpp",
+        "cinttypes": "cpp",
+        "codecvt": "cpp",
+        "condition_variable": "cpp",
+        "csetjmp": "cpp",
+        "forward_list": "cpp",
+        "unordered_set": "cpp",
+        "regex": "cpp",
+        "future": "cpp",
+        "iomanip": "cpp",
+        "mutex": "cpp",
+        "shared_mutex": "cpp",
+        "thread": "cpp",
+        "bit": "cpp"
       },
 }

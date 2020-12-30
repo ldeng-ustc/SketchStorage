@@ -45,15 +45,6 @@ void parse_args (int argc, char **argv)
     }
 }
 
-
-void print_result(FILE * file, const vector<int> & result) {
-    fprintf(file, "%d", result[0]);
-    for(size_t i = 1; i < result.size(); i++) {
-        fprintf(file, ",%d", result[i]);
-    }
-    fprintf(file, "\n");
-}
-
 int main(int argc, char ** argv) {
     parse_args(argc, argv);
 
@@ -91,7 +82,7 @@ int main(int argc, char ** argv) {
             for(auto flow: flows_list) {
                 flow.Print(std_flows);
             }
-            c.start();
+            c.Start();
             if(insert_without_index){
                 db.PutFlowset_Fake(epoch_id, flows_list);
             }
@@ -101,7 +92,7 @@ int main(int argc, char ** argv) {
             else{
                 db.PutFlowset(epoch_id, flows_list);
             }
-            insert_time = c.stop();
+            insert_time = c.Stop();
             process_mem_usage(&vm, &rss);
             int epoch_time_ms = TimevalToLong(epoch_id) / 1000 % (60 * 1000);
             fprintf(eval_output, "%d,%d,%d\n", epoch_time_ms, static_cast<int>(rss), insert_time);

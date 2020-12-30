@@ -1,7 +1,7 @@
 /*
  *  Abbreviations and acronyms：
  *      pkt     packet
- *      ts      time
+ *      ts      timestamp
  *      hdr     header
  */
 

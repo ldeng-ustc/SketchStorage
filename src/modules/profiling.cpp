@@ -39,11 +39,20 @@ void process_mem_usage(double * vm_usage, double * resident_set)
    *resident_set = rss * page_size_kb;
 }
 
-void Clock::start() {
+void Clock::Start() {
     start_ = std::chrono::steady_clock::now();
 }
 
-time_t Clock::stop() {
-    auto duration = std::chrono::steady_clock::now() - start_;
-    return chrono::duration_cast<chrono::microseconds>(duration).count();
+double Clock::Pause() {
+    tmp_ += std::chrono::steady_clock::now() - start_;
+    return tmp_.count();
+}
+
+void Clock::Restart() {
+    start_ = std::chrono::steady_clock::now();
+}
+
+double Clock::Stop() {
+    tmp_ += std::chrono::steady_clock::now() - start_;
+    return tmp_.count();
 }

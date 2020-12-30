@@ -1,6 +1,6 @@
 CXX      := g++
 CXXFLAGS := --std=c++17 -I /usr/include/mysql-cppconn-8 -I /home/ldeng/rocksdb/include -L /home/ldeng/rocksdb -L /home/ldeng/LevelDB_Embedded-Secondary-Index
-LDFLAGS  := -lpcap -lleveldb -lrocksdb -lpthread -lbz2 -lz -ldl -lmysqlcppconn8
+LDFLAGS  := -lpcap -lleveldb -lrocksdb -lpthread -llz4 -lbz2 -lz -ldl -lmysqlcppconn8
 
 BUILD    := ./build
 SRC_DIR  := ./src

@@ -71,9 +71,9 @@ int PutFlowset(Session *db, const timeval &epoch_id,
             info.start_time_, info.end_time_, info.pkt_cnt_, info.flow_size_);
     }
     Clock c;
-    c.start();
+    c.Start();
     inserter.execute();
-    return c.stop();
+    return c.Stop();
 }
 
 int Scan(Session *db, timeval st, timeval ed) {
@@ -94,9 +94,9 @@ int Scan(Session *db, timeval st, timeval ed) {
         st.tv_sec, st.tv_sec, st.tv_usec,
         ed.tv_sec, ed.tv_sec, ed.tv_usec);
     Clock c;
-    c.start();
+    c.Start();
     RowResult sql_result = db->sql(sql).execute();
-    int t = c.stop();
+    int t = c.Stop();
     //printf("size: %lu\n", sql_result.count());
     fflush(stdout);
     return t;
@@ -123,9 +123,9 @@ int GetFlow(Session *db, Flowkey5Tuple key, timeval st, timeval ed, int *result_
         key.src_port, key.dst_port,
         key.proto);
     Clock c;
-    c.start();
+    c.Start();
     RowResult sql_result = db->sql(sql).execute();
-    int t = c.stop();
+    int t = c.Stop();
     *result_size = sql_result.count();
     //printf("size: %lu\n", sql_result.count());
     //fflush(stdout);

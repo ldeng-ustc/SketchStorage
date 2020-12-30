@@ -66,7 +66,7 @@ vector<int> testWrite(leveldb::DB *db) {
             cout << "inserting batch " << batch_cnt << "..." << endl;
         }
         // printf("cnt: %lu\n", batch.items.size());
-        c.start();
+        c.Start();
         for(const auto & flow: batch.items) {
             if(rand() % key_ratio == 0) {
                 global_keys.push_back(flow.flowkey);
@@ -102,7 +102,7 @@ vector<int> testWrite(leveldb::DB *db) {
             printf("val: %s\nout: %s\n", val, out.c_str());
 #endif
         }
-        result.push_back(c.stop());
+        result.push_back(c.Stop());
     }
     return result;
 }

@@ -84,9 +84,9 @@ vector<int> TestDelayPutFlowset(SketchDB * db, PutFlowsetFunc PutFlowset) {
             }
             flows_map.clear();
             //printf("insert size: %lu\n", flows_list.size());
-            c.start();
+            c.Start();
             PutFlowset(db, epoch_id, flows_list);
-            result.push_back(c.stop());
+            result.push_back(c.Stop());
             epoch_id = GetEpochId(pkt.ts);
             if(CmpTimeval(epoch_id, end_epoch) >= 0) {
                 break;
@@ -123,9 +123,9 @@ vector<int> TestDelayScan(SketchDB * db) {
         //printf("%lf, %lf, %lf\n", TimevalToDouble(random_ts), TimevalToDouble(scan_start), TimevalToDouble(scan_end));
         
         vector<Flow> scan_result;
-        c.start();
+        c.Start();
         db->Scan(scan_start, scan_end, &scan_result);
-        result.push_back(c.stop());
+        result.push_back(c.Stop());
         //printf("%d\n", scan_result.size());
     }
     return result;
@@ -147,9 +147,9 @@ vector<int> TestDelayGetFlow(SketchDB * db) {
             timeradd(&ts_start, &ts_range, &ts_end);
             vector<FlowInfo> getflow_result;
             Clock c;
-            c.start();
+            c.Start();
             db->GetFlow(pkt.key, ts_start, ts_end, &getflow_result);
-            result.push_back(c.stop());
+            result.push_back(c.Stop());
         }
     }
     return result;
@@ -231,14 +231,14 @@ int main(int argc, char ** argv) {
     //         for(auto flow: flows_list) {
     //             flow.Print(std_flows);
     //         }
-    //         c.start();
+    //         c.Start();
     //         if(insert_without_index){
     //             db.PutFlowset_Fake(epoch_id, flows_list);
     //         }
     //         else{
     //             db.PutFlowset(epoch_id, flows_list);
     //         }
-    //         insert_time = c.stop();
+    //         insert_time = c.Stop();
     //         process_mem_usage(&vm, &rss);
     //         int epoch_time_ms = TimevalToLong(epoch_id) / 1000 % (60 * 1000);
     //         fprintf(eval_output, "%d,%d,%d\n", epoch_time_ms, static_cast<int>(rss), insert_time);
